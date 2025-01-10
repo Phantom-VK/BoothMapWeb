@@ -1,0 +1,240 @@
+<!-- templates/booths/city_selection.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Booth Location Selection</title>
+    <style>
+        :root {
+            --primary-blue: #000080;
+            --white: #FFFFFF;
+            --black: #000000;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--white);
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .logo {
+            width: 200px;
+            margin: 30px 0;
+        }
+
+        .title {
+            color: var(--black);
+            font-size: 30px;
+            font-weight: 500;
+            margin: 40px 0;
+        }
+
+        .dropdown-container {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        select {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        .navigation-button {
+            width: 100%;
+            height: 50px;
+            background-color: var(--primary-blue);
+            color: var(--white);
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        .navigation-button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary-blue);
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-dialog {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="/static/images/election_commission_logo.png" alt="Election Commission Logo" class="logo">
+
+        <h1 class="title">Select Location</h1>
+
+        <div class="dropdown-container">
+            <select id="citySelect" onchange="loadTalukas()">
+                <option value="">Select City</option>
+                {% for city in cities %}
+                    <option value="{{ city }}">{{ city }}</option>
+                {% endfor %}
+            </select>
+
+            <select id="talukaSelect" onchange="loadBooths()" disabled>
+                <option value="">Select Taluka</option>
+            </select>
+
+            <select id="boothSelect" disabled>
+                <option value="">Select Booth</option>
+            </select>
+        </div>
+
+        <button id="locateButton" class="navigation-button" disabled onclick="navigateToMap()">
+            <span id="buttonText">Locate Booths</span>
+            <div id="loadingSpinner" class="loading-spinner"></div>
+        </button>
+    </div>
+
+    <div id="errorDialog" class="error-dialog">
+        <h3>Error</h3>
+        <p id="errorMessage"></p>
+        <button onclick="closeErrorDialog()">OK</button>
+    </div>
+
+    <script>
+        let isLoading = false;
+
+        async function loadTalukas() {
+            const citySelect = document.getElementById('citySelect');
+            const talukaSelect = document.getElementById('talukaSelect');
+            const boothSelect = document.getElementById('boothSelect');
+            const selectedCity = citySelect.value;
+
+            talukaSelect.disabled = true;
+            boothSelect.disabled = true;
+            talukaSelect.innerHTML = '<option value="">Select Taluka</option>';
+            boothSelect.innerHTML = '<option value="">Select Booth</option>';
+
+            if (selectedCity) {
+                try {
+                    const response = await fetch(`/api/talukas/${selectedCity}/`);
+                    const data = await response.json();
+
+                    if (data.error) {
+                        showError(data.error);
+                        return;
+                    }
+
+                    data.talukas.forEach(taluka => {
+                        const option = document.createElement('option');
+                        option.value = taluka;
+                        option.textContent = taluka;
+                        talukaSelect.appendChild(option);
+                    });
+
+                    talukaSelect.disabled = false;
+                } catch (error) {
+                    showError('Failed to load talukas');
+                }
+            }
+            updateButtonState();
+        }
+
+        async function loadBooths() {
+            const citySelect = document.getElementById('citySelect');
+            const talukaSelect = document.getElementById('talukaSelect');
+            const boothSelect = document.getElementById('boothSelect');
+            const selectedCity = citySelect.value;
+            const selectedTaluka = talukaSelect.value;
+
+            boothSelect.disabled = true;
+            boothSelect.innerHTML = '<option value="">Select Booth</option>';
+
+            if (selectedCity && selectedTaluka) {
+                try {
+                    const response = await fetch(`/api/booths/${selectedCity}/${selectedTaluka}/`);
+                    const data = await response.json();
+
+                    if (data.error) {
+                        showError(data.error);
+                        return;
+                    }
+
+                    data.booths.forEach(booth => {
+                        const option = document.createElement('option');
+                        option.value = booth.id;
+                        option.textContent = booth.name;
+                        boothSelect.appendChild(option);
+                    });
+
+                    boothSelect.disabled = false;
+                } catch (error) {
+                    showError('Failed to load booths');
+                }
+            }
+            updateButtonState();
+        }
+
+        function updateButtonState() {
+            const citySelect = document.getElementById('citySelect');
+            const talukaSelect = document.getElementById('talukaSelect');
+            const boothSelect = document.getElementById('boothSelect');
+            const locateButton = document.getElementById('locateButton');
+
+            locateButton.disabled = !citySelect.value || !talukaSelect.value || !boothSelect.value || isLoading;
+        }
+
+        function navigateToMap() {
+            const citySelect = document.getElementById('citySelect');
+            const boothSelect = document.getElementById('boothSelect');
+            window.location.href = `/map/?city=${citySelect.value}&booth=${boothSelect.value}`;
+        }
+
+        function showError(message) {
+            const errorDialog = document.getElementById('errorDialog');
+            const errorMessage = document.getElementById('errorMessage');
+            errorMessage.textContent = message;
+            errorDialog.style.display = 'block';
+        }
+
+        function closeErrorDialog() {
+            const errorDialog = document.getElementById('errorDialog');
+            errorDialog.style.display = 'none';
+        }
+
+        // Update button state when page loads
+        updateButtonState();
+    </script>
+</body>
+</html>

@@ -1,0 +1,157 @@
+<!-- templates/booths/map_view.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Election Booth Map</title>
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY"></script>
+    <style>
+        /* Style equivalent to your Compose theme */
+        :root {
+            --saffron: #FFA500;
+            --green: #008000;
+            --white: #FFFFFF;
+        }
+
+        #map {
+            height: 100vh;
+            width: 100%;
+        }
+
+        .booth-card {
+            position: fixed;
+            bottom: 16px;
+            left: 16px;
+            right: 16px;
+            background-color: var(--saffron);
+            color: #FFF3ED;
+            padding: 16px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            display: none;  /* Hidden by default */
+        }
+
+        .booth-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .booth-title {
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .booth-details {
+            margin-bottom: 16px;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .action-button {
+            background-color: var(--green);
+            color: var(--white);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+
+    <div id="boothCard" class="booth-card">
+        <div class="booth-header">
+            <span id="boothName" class="booth-title"></span>
+        </div>
+        <div class="booth-details">
+            <div id="boothTaluka"></div>
+            <div id="boothBLO"></div>
+            <div id="boothContact"></div>
+        </div>
+        <div class="button-container">
+            <button class="action-button" onclick="viewBoothDetails()">View Details</button>
+            <button class="action-button" onclick="getDirections()">Get Directions</button>
+        </div>
+    </div>
+
+    <script>
+        let map;
+        let currentMarker = null;
+        let selectedBooth = null;
+
+        function initMap() {
+            // Default location (Maharashtra)
+            const defaultLocation = { lat: 19.1383, lng: 77.3210 };
+
+            map = new google.maps.Map(document.getElementById('map'), {
+                center: defaultLocation,
+                zoom: 13,
+                styles: {% raw %}{{ map_style|safe }}{% endraw %}  // We'll pass this from Django view
+            });
+
+            // Get booth data from Django
+            fetchSelectedBooth();
+        }
+
+        async function fetchSelectedBooth() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const boothId = urlParams.get('booth');
+
+            if (boothId) {
+                const response = await fetch(`/api/booth/${boothId}/`);
+                const data = await response.json();
+                if (data.booth) {
+                    showBooth(data.booth);
+                }
+            }
+        }
+
+        function showBooth(booth) {
+            selectedBooth = booth;
+
+            // Create or update marker
+            const position = { lat: booth.latitude, lng: booth.longitude };
+
+            if (currentMarker) {
+                currentMarker.setMap(null);
+            }
+
+            currentMarker = new google.maps.Marker({
+                position: position,
+                map: map,
+                title: booth.name
+            });
+
+            // Center map on booth
+            map.panTo(position);
+
+            // Update and show booth card
+            document.getElementById('boothName').textContent = booth.name;
+            document.getElementById('boothTaluka').textContent = booth.taluka;
+            document.getElementById('boothBLO').textContent = `BLO: ${booth.blo_name}`;
+            document.getElementById('boothContact').textContent = `Contact: ${booth.blo_contact}`;
+            document.getElementById('boothCard').style.display = 'block';
+        }
+
+        function viewBoothDetails() {
+            if (selectedBooth) {
+                window.location.href = `/booth/${selectedBooth.id}/details/`;
+            }
+        }
+
+        function getDirections() {
+            if (selectedBooth) {
+                const url = `https://www.google.com/maps/dir/?api=1&destination=${selectedBooth.latitude},${selectedBooth.longitude}`;
+                window.open(url, '_blank');
+            }
+        }
+
+        initMap();
+    </script>
+</body>
+</html>
