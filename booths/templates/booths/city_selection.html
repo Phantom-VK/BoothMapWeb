@@ -1,4 +1,3 @@
-<!-- templates/booths/city_selection.html -->
 <!DOCTYPE html>
 <html>
 <head>
@@ -98,143 +97,143 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <img src="/static/images/election_commission_logo.png" alt="Election Commission Logo" class="logo">
+<div class="container">
+    <img src="/static/images/election_commission_logo.png" alt="Election Commission Logo" class="logo">
 
-        <h1 class="title">Select Location</h1>
+    <h1 class="title">Select Location</h1>
 
-        <div class="dropdown-container">
-            <select id="citySelect" onchange="loadTalukas()">
-                <option value="">Select City</option>
-                {% for city in cities %}
-                    <option value="{{ city }}">{{ city }}</option>
-                {% endfor %}
-            </select>
+    <div class="dropdown-container">
+        <select id="citySelect" onchange="loadTalukas()">
+            <option value="">Select City</option>
+            {% for city in cities %}
+            <option value="{{ city }}">{{ city }}</option>
+            {% endfor %}
+        </select>
 
-            <select id="talukaSelect" onchange="loadBooths()" disabled>
-                <option value="">Select Taluka</option>
-            </select>
+        <select id="talukaSelect" onchange="loadBooths()" disabled>
+            <option value="">Select Taluka</option>
+        </select>
 
-            <select id="boothSelect" disabled>
-                <option value="">Select Booth</option>
-            </select>
-        </div>
-
-        <button id="locateButton" class="navigation-button" disabled onclick="navigateToMap()">
-            <span id="buttonText">Locate Booths</span>
-            <div id="loadingSpinner" class="loading-spinner"></div>
-        </button>
+        <select id="boothSelect" disabled>
+            <option value="">Select Booth</option>
+        </select>
     </div>
 
-    <div id="errorDialog" class="error-dialog">
-        <h3>Error</h3>
-        <p id="errorMessage"></p>
-        <button onclick="closeErrorDialog()">OK</button>
-    </div>
+    <button id="locateButton" class="navigation-button" disabled onclick="navigateToMap()">
+        Locate Booths
+    </button>
+</div>
 
-    <script>
-        let isLoading = false;
+<div id="errorDialog" class="error-dialog">
+    <h3>Error</h3>
+    <p id="errorMessage"></p>
+    <button onclick="closeErrorDialog()">OK</button>
+</div>
 
-        async function loadTalukas() {
-            const citySelect = document.getElementById('citySelect');
-            const talukaSelect = document.getElementById('talukaSelect');
-            const boothSelect = document.getElementById('boothSelect');
-            const selectedCity = citySelect.value;
+<script>
+    async function loadTalukas() {
+        const citySelect = document.getElementById('citySelect');
+        const talukaSelect = document.getElementById('talukaSelect');
+        const boothSelect = document.getElementById('boothSelect');
+        const selectedCity = citySelect.value;
 
-            talukaSelect.disabled = true;
-            boothSelect.disabled = true;
-            talukaSelect.innerHTML = '<option value="">Select Taluka</option>';
-            boothSelect.innerHTML = '<option value="">Select Booth</option>';
+        // Reset dropdowns
+        talukaSelect.disabled = true;
+        boothSelect.disabled = true;
+        talukaSelect.innerHTML = '<option value="">Select Taluka</option>';
+        boothSelect.innerHTML = '<option value="">Select Booth</option>';
 
-            if (selectedCity) {
-                try {
-                    const response = await fetch(`/api/talukas/${selectedCity}/`);
-                    const data = await response.json();
+        if (selectedCity) {
+            try {
+                const response = await fetch(`/api/talukas/${selectedCity}/`);
+                const data = await response.json();
 
-                    if (data.error) {
-                        showError(data.error);
-                        return;
-                    }
-
-                    data.talukas.forEach(taluka => {
-                        const option = document.createElement('option');
-                        option.value = taluka;
-                        option.textContent = taluka;
-                        talukaSelect.appendChild(option);
-                    });
-
-                    talukaSelect.disabled = false;
-                } catch (error) {
-                    showError('Failed to load talukas');
+                if (data.error) {
+                    showError(data.error);
+                    return;
                 }
+
+                data.talukas.forEach(taluka => {
+                    const option = document.createElement('option');
+                    option.value = taluka;
+                    option.textContent = taluka;
+                    talukaSelect.appendChild(option);
+                });
+
+                talukaSelect.disabled = false;
+            } catch (error) {
+                showError('Failed to load talukas');
             }
-            updateButtonState();
         }
+        updateButtonState();
+    }
 
-        async function loadBooths() {
-            const citySelect = document.getElementById('citySelect');
-            const talukaSelect = document.getElementById('talukaSelect');
-            const boothSelect = document.getElementById('boothSelect');
-            const selectedCity = citySelect.value;
-            const selectedTaluka = talukaSelect.value;
+    async function loadBooths() {
+        const citySelect = document.getElementById('citySelect');
+        const talukaSelect = document.getElementById('talukaSelect');
+        const boothSelect = document.getElementById('boothSelect');
+        const selectedCity = citySelect.value;
+        const selectedTaluka = talukaSelect.value;
 
-            boothSelect.disabled = true;
-            boothSelect.innerHTML = '<option value="">Select Booth</option>';
+        boothSelect.disabled = true;
+        boothSelect.innerHTML = '<option value="">Select Booth</option>';
 
-            if (selectedCity && selectedTaluka) {
-                try {
-                    const response = await fetch(`/api/booths/${selectedCity}/${selectedTaluka}/`);
-                    const data = await response.json();
+        if (selectedCity && selectedTaluka) {
+            try {
+                const response = await fetch(`/api/booths/${selectedCity}/${selectedTaluka}/`);
+                const data = await response.json();
 
-                    if (data.error) {
-                        showError(data.error);
-                        return;
-                    }
-
-                    data.booths.forEach(booth => {
-                        const option = document.createElement('option');
-                        option.value = booth.id;
-                        option.textContent = booth.name;
-                        boothSelect.appendChild(option);
-                    });
-
-                    boothSelect.disabled = false;
-                } catch (error) {
-                    showError('Failed to load booths');
+                if (data.error) {
+                    showError(data.error);
+                    return;
                 }
+
+                data.booths.forEach(booth => {
+                    const option = document.createElement('option');
+                    option.value = booth.id;
+                    option.textContent = booth.name || "Unnamed Booth";
+                    boothSelect.appendChild(option);
+                });
+
+                boothSelect.disabled = false;
+            } catch (error) {
+                showError('Failed to load booths');
             }
-            updateButtonState();
         }
+        updateButtonState();
+    }
 
-        function updateButtonState() {
-            const citySelect = document.getElementById('citySelect');
-            const talukaSelect = document.getElementById('talukaSelect');
-            const boothSelect = document.getElementById('boothSelect');
-            const locateButton = document.getElementById('locateButton');
+    function updateButtonState() {
+        const citySelect = document.getElementById('citySelect');
+        const talukaSelect = document.getElementById('talukaSelect');
+        const boothSelect = document.getElementById('boothSelect');
+        const locateButton = document.getElementById('locateButton');
 
-            locateButton.disabled = !citySelect.value || !talukaSelect.value || !boothSelect.value || isLoading;
-        }
+        locateButton.disabled = !(citySelect.value && talukaSelect.value && boothSelect.value);
+    }
 
-        function navigateToMap() {
-            const citySelect = document.getElementById('citySelect');
-            const boothSelect = document.getElementById('boothSelect');
+    function navigateToMap() {
+        const citySelect = document.getElementById('citySelect');
+        const boothSelect = document.getElementById('boothSelect');
+
+        if (citySelect.value && boothSelect.value) {
             window.location.href = `/map/?city=${citySelect.value}&booth=${boothSelect.value}`;
         }
+    }
 
-        function showError(message) {
-            const errorDialog = document.getElementById('errorDialog');
-            const errorMessage = document.getElementById('errorMessage');
-            errorMessage.textContent = message;
-            errorDialog.style.display = 'block';
-        }
+    function showError(message) {
+        const errorDialog = document.getElementById('errorDialog');
+        const errorMessage = document.getElementById('errorMessage');
+        errorMessage.textContent = message;
+        errorDialog.style.display = 'block';
+    }
 
-        function closeErrorDialog() {
-            const errorDialog = document.getElementById('errorDialog');
-            errorDialog.style.display = 'none';
-        }
+    function closeErrorDialog() {
+        const errorDialog = document.getElementById('errorDialog');
+        errorDialog.style.display = 'none';
+    }
 
-        // Update button state when page loads
-        updateButtonState();
-    </script>
+    updateButtonState();
+</script>
 </body>
 </html>

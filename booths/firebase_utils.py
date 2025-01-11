@@ -34,18 +34,22 @@ class BoothDatabase:
 
     async def fetch_booths(self, city):
         try:
+            # print(f"Fetching booths for city: {city}")
             booths_snapshot = self.db.child(city).get()
-            booths = []
+            # print(f"Raw booths snapshot: {booths_snapshot}")
 
+            booths = []
             if booths_snapshot:
                 for booth_data in booths_snapshot.values():
+                    # print(f"Processing booth data: {booth_data}")
                     if (booth_data.get('id') and
                             booth_data.get('bloName') and
                             booth_data.get('latitude') and
                             booth_data.get('longitude')):
                         booth = {
                             'id': booth_data.get('id', ''),
-                            'name': booth_data.get('name', ''),
+                            'name': booth_data.get('name', 'Unnamed Booth'),
+                            # Default to "Unnamed Booth" if name is missing
                             'images': booth_data.get('imageUri', ''),
                             'blo_name': booth_data.get('bloName', ''),
                             'blo_contact': booth_data.get('bloContact', ''),
@@ -54,7 +58,9 @@ class BoothDatabase:
                             'latitude': float(booth_data.get('latitude', 0.0)),
                             'longitude': float(booth_data.get('longitude', 0.0))
                         }
+
                         booths.append(booth)
+            # print(f"Booths fetched: {booths}")
             return booths
         except Exception as e:
             raise Exception(f"Error fetching booths: {str(e)}")
