@@ -48,5 +48,20 @@ async def get_booths_by_taluka(request, city, taluka):
         return JsonResponse({'error': str(e)}, status=500)
 
 # Render map view
+# def map_view(request):
+#     return render(request, 'map_view.html', {})
+# from django.shortcuts import render
+# import json
 def map_view(request):
-    return render(request, 'map_view.html', {})
+    city = request.GET.get('city')  # Extract the 'city' parameter from the query string
+    booth = request.GET.get('booth')  # Extract the 'booth' parameter from the query string
+
+    # Pass the parameters to the template context
+    context = {
+    'city': city,
+    'booth': booth,
+    'map_style': '[{"elementType": "geometry", "stylers": [{"color": "#212121"}]}]',
+  
+}
+
+    return render(request, 'booths/map_view.html', context)

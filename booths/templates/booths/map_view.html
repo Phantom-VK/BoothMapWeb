@@ -3,7 +3,7 @@
 <html>
 <head>
     <title>Election Booth Map</title>
-    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAtG725SND56oUUS-id410Cg333ghCrDGk"></script>
     <style>
         /* Style equivalent to your Compose theme */
         :root {
@@ -87,12 +87,13 @@
         function initMap() {
             // Default location (Maharashtra)
             const defaultLocation = { lat: 19.1383, lng: 77.3210 };
-
+            {% comment %} const mapStyle = JSON.parse('{{ map_style|escapejs }}'); {% endcomment %}
             map = new google.maps.Map(document.getElementById('map'), {
                 center: defaultLocation,
                 zoom: 13,
-                styles: {% raw %}{{ map_style|safe }}{% endraw %}  // We'll pass this from Django view
+                styles: {{ map_style|safe }} // We'll pass this from Django view
             });
+            
 
             // Get booth data from Django
             fetchSelectedBooth();
@@ -104,6 +105,7 @@
 
             if (boothId) {
                 const response = await fetch(`/api/booth/${boothId}/`);
+                console.log(response.json)
                 const data = await response.json();
                 if (data.booth) {
                     showBooth(data.booth);

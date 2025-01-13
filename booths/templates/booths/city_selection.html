@@ -119,7 +119,7 @@
         </select>
     </div>
 
-    <button id="locateButton" class="navigation-button" disabled onclick="navigateToMap()">
+    <button id="locateButton" class="navigation-button" onclick="navigateToMap()">
         Locate Booths
     </button>
 </div>
@@ -208,8 +208,11 @@
         const talukaSelect = document.getElementById('talukaSelect');
         const boothSelect = document.getElementById('boothSelect');
         const locateButton = document.getElementById('locateButton');
+        console.log(citySelect.value)
+        console.log(talukaSelect.value)
+        console.log(boothSelect.value)
 
-        locateButton.disabled = !(citySelect.value && talukaSelect.value && boothSelect.value);
+        locateButton.disabled = (citySelect.value && talukaSelect.value && boothSelect.value);
     }
 
     function navigateToMap() {
